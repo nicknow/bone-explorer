@@ -1,0 +1,105 @@
+<!doctype html>
+<!-- Bone Explorer | Copyright (c) 2026 Nicolas Nowinski | MIT License -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Bone Explorer</title>
+  <meta name="description" content="Explore all 206 bones of the human skeleton. Zoom in, tap a bone, and learn fun facts!">
+  <meta name="author" content="Nicolas Nowinski">
+  <meta name="theme-color" content="#1b2654">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦴</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" id="brand" aria-label="Bone Explorer home">
+      <span class="logo" aria-hidden="true">🦴</span>
+      <span class="brand-text">Bone Explorer</span>
+    </a>
+    <div class="search" id="search-box">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input id="search" type="search" placeholder="Find a bone… try “kneecap”" autocomplete="off" spellcheck="false"
+             aria-label="Search for a bone" aria-controls="search-results" aria-expanded="false" role="combobox">
+      <ul id="search-results" class="search-results" role="listbox" hidden></ul>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn only-mobile" id="btn-search" aria-label="Search">🔍</button>
+      <button class="icon-btn" id="btn-sound" aria-pressed="false" title="Read bones out loud" aria-label="Read bones out loud">🔇</button>
+      <button class="pill quiz-btn" id="btn-quiz">🎯 <span>Quiz</span></button>
+    </div>
+  </header>
+
+  <nav class="regions" id="regions" aria-label="Body parts"></nav>
+
+  <main class="stage" id="stage">
+    <section class="canvas-wrap" id="canvas-wrap">
+      <svg id="skeleton" role="img" aria-label="Interactive skeleton. Tap a bone to learn about it." xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3" result="b"/>
+            <feFlood flood-color="#ffd166" result="c"/>
+            <feComposite in="c" in2="b" operator="in" result="g"/>
+            <feMerge><feMergeNode in="g"/><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="scene-root"></g>
+      </svg>
+
+      <div class="scene-tabs" id="scene-tabs" role="tablist" aria-label="Views"></div>
+
+      <div class="head-chips" id="head-chips" hidden>
+        <button data-goto="side">💀 Skull from the side</button>
+        <button data-goto="ear">👂 Tiny ear bones</button>
+        <button data-goto="palate">👄 Roof of the mouth</button>
+      </div>
+
+      <div class="zoom-ctrls">
+        <button class="round" id="btn-turn" title="Turn the skeleton around" aria-label="Turn around">🔄</button>
+        <button class="round" id="zoom-in" aria-label="Zoom in">＋</button>
+        <button class="round" id="zoom-out" aria-label="Zoom out">－</button>
+        <button class="round" id="zoom-home" aria-label="Show the whole skeleton">🏠</button>
+      </div>
+
+      <div class="quizbar" id="quizbar" hidden>
+        <div class="quiz-top">
+          <span class="quiz-count" id="quiz-count">1 / 10</span>
+          <span class="quiz-score" id="quiz-score">⭐ 0</span>
+          <button class="quiz-x" id="quiz-stop" aria-label="Stop quiz">✕</button>
+        </div>
+        <div class="quiz-q" id="quiz-q"></div>
+        <div class="quiz-msg" id="quiz-msg" aria-live="polite"></div>
+        <div class="quiz-actions">
+          <button class="pill soft" id="quiz-say" aria-label="Read the question out loud">🔊</button>
+          <button class="pill soft" id="quiz-hint">💡 Hint</button>
+          <button class="pill soft" id="quiz-skip">Skip ⏭</button>
+          <button class="pill go" id="quiz-next" hidden>Next ▶</button>
+        </div>
+      </div>
+
+      <div class="tooltip" id="tooltip" hidden></div>
+      <div class="sel-tag" id="sel-tag" hidden></div>
+      <div class="toast" id="toast" aria-live="polite"></div>
+    </section>
+
+    <aside class="panel" id="panel" aria-live="polite">
+      <button class="grab" id="grab" aria-label="Show or hide the info card"><span></span></button>
+      <div class="panel-body" id="panel-body"></div>
+    </aside>
+  </main>
+
+  <div class="modal" id="modal" hidden>
+    <div class="modal-card" id="modal-card" role="dialog" aria-modal="true"></div>
+  </div>
+  <div class="confetti" id="confetti" aria-hidden="true"></div>
+
+  <script src="js/geo.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/bones.js"></script>
+  <script src="js/viewer.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

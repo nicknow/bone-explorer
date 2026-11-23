@@ -27,6 +27,7 @@ Deep links work: `index.html#femur-l` opens the left thigh bone.
 
 | File | What it does |
 | --- | --- |
+| `about.html` | About page: where the site came from, privacy notes and a link to this repo |
 | `js/geo.js` | Shape helpers that turn control points into smooth, shaded bone paths |
 | `js/scenes.js` | The drawings: front, back, skull side, ear and roof-of-mouth views |
 | `js/bones.js` | Text for every bone, plus the body-part groups |

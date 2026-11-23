@@ -324,7 +324,7 @@
       <div class="box fact"><h3>⭐ Did you know?</h3><p id="fact">${esc(SK.FUN_FACTS[factIdx])}</p>
         <button class="more-fact" id="more-fact">Another fact ➜</button></div>
       <div class="btn-row"><button class="big-btn orange" data-act="quiz">🎯 Start the quiz</button></div>
-      <p class="copyright">© 2026 Nicolas Nowinski · MIT License</p>
+      <p class="copyright">© 2026 Nicolas Nowinski · MIT License · <a href="about.html">About this site</a></p>
     </div>`;
     pbody.scrollTop = 0;
   }

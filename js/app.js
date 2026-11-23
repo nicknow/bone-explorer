@@ -430,30 +430,74 @@
   }
 
   /* ---------- speech ---------- */
+  // Browser speech is quirky. Safari drops speak() called straight after cancel(),
+  // iOS only talks if the first speak() happens inside a tap, and Chrome stops long
+  // utterances after ~15s (and can garbage-collect them mid-sentence). So we unlock
+  // on the first tap, wait a moment after cancelling, and read sentence by sentence.
   const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-  let voice = null, speakingBtn = null;
+  const synth = canSpeak ? window.speechSynthesis : null;
+  let voice = null, speakingBtn = null, speakToken = 0, unlocked = false, unlockU = null;
+  const live = [];   // keep utterances referenced until they finish
   function pickVoice() {
-    const vs = speechSynthesis.getVoices();
-    voice = vs.find(v => /^en[-_]US/i.test(v.lang) && /Samantha|Google US English|Jenny|Aria|Ava|Zira/i.test(v.name))
-      || vs.find(v => /^en[-_]US/i.test(v.lang)) || vs.find(v => /^en/i.test(v.lang)) || null;
+    const vs = synth.getVoices().filter(v => /^en/i.test(v.lang));
+    const us = vs.filter(v => /^en[-_]US/i.test(v.lang));
+    const nice = v => /Samantha|Jenny|Aria|Ava|Zira|Google US English/i.test(v.name);
+    // on-device voices are the most reliable; network ones can fail silently
+    voice = us.find(v => v.localService && nice(v)) || us.find(v => v.localService)
+      || vs.find(v => v.localService) || us.find(nice) || us[0] || vs[0] || null;
   }
-  if (canSpeak) { pickVoice(); speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', pickVoice); }
-  function stopSpeaking() {
-    if (!canSpeak) return;
-    speechSynthesis.cancel();
+  function unlockSpeech() {
+    if (unlocked || !canSpeak) return;
+    unlocked = true;
+    const u = unlockU = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    live.push(u);
+    u.onend = u.onerror = () => live.splice(live.indexOf(u) >>> 0, 1);
+    synth.speak(u);
+  }
+  if (canSpeak) {
+    pickVoice();
+    if (synth.addEventListener) synth.addEventListener('voiceschanged', pickVoice);
+    ['pointerdown', 'touchend', 'keydown'].forEach(ev => document.addEventListener(ev, unlockSpeech, { capture: true, passive: true }));
+  }
+  function resetSpeakBtn() {
     if (speakingBtn) { speakingBtn.classList.remove('speaking'); speakingBtn.textContent = '🔊 Read it to me'; speakingBtn = null; }
   }
-  function speak(text, btn) {
+  // is real speech playing or queued? (the silent unlock utterance doesn't count)
+  const talking = () => live.some(u => u !== unlockU);
+  function stopSpeaking() {
     if (!canSpeak) return;
+    speakToken++;
+    if (talking()) synth.cancel();
+    resetSpeakBtn();
+  }
+  function chunks(text) {
+    return (text.match(/[^.!?]+[.!?]*\s*/g) || [text]).map(s => s.trim()).filter(Boolean);
+  }
+  function speak(text, btn) {
+    if (!canSpeak || !text) return;
+    const busy = talking();
     stopSpeaking();
-    const u = new SpeechSynthesisUtterance(text);
-    if (voice) u.voice = voice;
-    u.rate = 0.92; u.pitch = 1.08;
-    if (btn) {
-      speakingBtn = btn; btn.classList.add('speaking'); btn.textContent = '⏹ Stop reading';
-      u.onend = u.onerror = () => { if (speakingBtn === btn) { btn.classList.remove('speaking'); btn.textContent = '🔊 Read it to me'; speakingBtn = null; } };
-    }
-    speechSynthesis.speak(u);
+    const token = speakToken;
+    if (btn) { speakingBtn = btn; btn.classList.add('speaking'); btn.textContent = '⏹ Stop reading'; }
+    const parts = chunks(text);
+    const run = () => {
+      if (token !== speakToken) return;
+      if (synth.paused) synth.resume();
+      parts.forEach((part, i) => {
+        const u = new SpeechSynthesisUtterance(part);
+        if (voice) { u.voice = voice; u.lang = voice.lang; } else u.lang = 'en-US';
+        u.rate = 0.92; u.pitch = 1.08;
+        live.push(u);
+        u.onend = u.onerror = () => {
+          live.splice(live.indexOf(u) >>> 0, 1);
+          if (i === parts.length - 1 && token === speakToken && speakingBtn === btn) resetSpeakBtn();
+        };
+        synth.speak(u);
+      });
+    };
+    // speak right away when idle (keeps the tap's permission on iOS); after a cancel, give it a moment
+    if (busy) setTimeout(run, 120); else run();
   }
   function speakBone(b, btn) {
     if (!b) return;
